@@ -1,5 +1,7 @@
-#include <jni.h>
+#include <libusb.h>
 #include <rtl-sdr.h>
+#include <jni.h>
+#include <stdio.h>
 
 static rtlsdr_dev_t *dev = NULL;
 
@@ -8,14 +10,22 @@ Java_threadfool_op_RtlSdr_open(JNIEnv *env, jobject obj, jint index) {
     uint32_t count = rtlsdr_get_device_count();
     printf("RTL-SDR devices: %u\n", count);
 
-    if (count == 0) {
-        fprintf(stderr, "No RTL-SDR devices found!\n");
-        return -100;
+    for (uint32_t i = 0; i < count; i++) {
+        printf("Device %u: %s\n", i, rtlsdr_get_device_name(i));
     }
 
     int r = rtlsdr_open(&dev, index);
     if (r < 0) {
         fprintf(stderr, "rtlsdr_open failed with code %d\n", r);
+
+        libusb_context *ctx;
+        libusb_init(&ctx);
+        libusb_device **list;
+        ssize_t cnt = libusb_get_device_list(ctx, &list);
+        printf("libusb sees %ld devices\n", cnt);
+        libusb_free_device_list(list, 1);
+        libusb_exit(ctx);
+
         return r;
     }
 

@@ -3,10 +3,25 @@
 
 static rtlsdr_dev_t *dev = NULL;
 
-JNIEXPORT jint JNICALL Java_threadfool_op_RtlSdr_open
-  (JNIEnv *env, jobject obj, jint index)
-{
-    return rtlsdr_open(&dev, index);
+JNIEXPORT jint JNICALL
+Java_threadfool_op_RtlSdr_open(JNIEnv *env, jobject obj, jint index) {
+    uint32_t count = rtlsdr_get_device_count();
+    printf("RTL-SDR devices: %u\n", count);
+
+    if (count == 0) {
+        fprintf(stderr, "No RTL-SDR devices found!\n");
+        return -100;
+    }
+
+    int r = rtlsdr_open(&dev, index);
+    if (r < 0) {
+        fprintf(stderr, "rtlsdr_open failed with code %d\n", r);
+        return r;
+    }
+
+    rtlsdr_set_tuner_gain_mode(dev, 0);
+    rtlsdr_reset_buffer(dev);
+    return 0;
 }
 
 JNIEXPORT jint JNICALL Java_threadfool_op_RtlSdr_setCenterFreq
